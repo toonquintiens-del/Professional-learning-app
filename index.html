@@ -274,7 +274,7 @@
 // bescherming zit in de RLS-policies in de database, niet in het verbergen
 // van deze sleutel.
 const SUPABASE_URL = 'https://nljwrwtrorsyhgfingch.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_1N0wwYzopWQjAzhEc3xqRw_Vrw6skF7';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sandyd3Ryb3JzeWhnZmluZ2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMTY2MjUsImV4cCI6MjEwMjg5MjYyNX0.LEqCttIvCpforTud7TomcZ9lF50NP6xrpkfmPBuLLn4'; // legacy anon (JWT) key — betrouwbaar compatibel met de JS-client; de nieuwe "publishable" sleutel gaf compatibiliteitsproblemen
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUserId = null;
