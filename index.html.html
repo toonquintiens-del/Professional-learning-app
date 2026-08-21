@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Learning">
+<title>Professional Learning</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' rx='40' fill='%2300338D'/%3E%3Ctext x='50%25' y='58%25' font-size='90' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --accent:#00338D;
+    --accent-light:#E8EEF8;
+    --cta:#DB6E4A;
+    --cta-light:#FBEAE1;
+    --bg:#F7F7FB;
+    --card:#FFFFFF;
+    --text:#1F2333;
+    --muted:#6B7280;
+    --good:#0F9D58;
+    --bad:#D93025;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Segoe UI,Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  header.topbar{
+    display:flex;align-items:center;gap:10px;
+    padding:16px 20px 8px;
+  }
+  header.topbar .back{
+    width:32px;height:32px;border-radius:50%;background:var(--card);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;flex:none;
+    font-size:16px;color:var(--accent);border:none;
+  }
+  header.topbar .title{font-size:17px;font-weight:600;}
+  main{flex:1;padding:8px 20px 32px;}
+  .screen{display:none;animation:fade .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .hero{padding:12px 4px 20px;}
+  .hero h1{font-size:26px;margin:4px 0 2px;}
+  .hero p{color:var(--muted);margin:0;font-size:15px;}
+
+  .card{
+    background:var(--card);border-radius:var(--radius);
+    padding:18px;margin-bottom:16px;
+    box-shadow:0 1px 4px rgba(20,20,43,.06);
+  }
+  .card.tap{cursor:pointer;transition:transform .1s;}
+  .card.tap:active{transform:scale(.98);}
+  .eyebrow{
+    text-transform:uppercase;font-size:11px;letter-spacing:.06em;
+    color:var(--accent);font-weight:700;margin-bottom:6px;
+  }
+  .card h2{font-size:19px;margin:0 0 8px;}
+  .card p{margin:0 0 4px;font-size:15px;line-height:1.5;color:var(--text);}
+  .card .muted{color:var(--muted);font-size:13px;}
+
+  .field{margin-bottom:12px;}
+  .field input{
+    width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #E5E5F0;
+    font-size:15.5px;background:#fff;color:var(--text);
+  }
+  .field input:focus{outline:none;border-color:var(--accent);}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--cta);color:#fff;border:none;border-radius:14px;
+    padding:14px 18px;font-size:15.5px;font-weight:600;width:100%;
+    margin-top:10px;cursor:pointer;
+  }
+  .btn:active{opacity:.85;}
+  .btn.secondary{background:var(--accent-light);color:var(--accent);}
+  .btn.ghost{background:transparent;color:var(--accent);padding:8px;margin-top:0;width:auto;}
+
+  .progress{display:flex;gap:6px;padding:0 20px 10px;}
+  .progress .dot{flex:1;height:4px;border-radius:2px;background:#E2E2EE;}
+  .progress .dot.done{background:var(--accent);}
+
+  .quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+  .quad div{
+    border-radius:14px;padding:12px;font-size:13px;line-height:1.4;
+  }
+  .quad .r{background:#FDECEC;color:#8A2323;}
+  .quad .a{background:#FFF4DE;color:#8A5B00;}
+  .quad .i{background:#E9E1FF;color:#4B2F9E;}
+  .quad .d{background:#E2F3E9;color:#0F5C33;}
+  .quad b{display:block;font-size:14px;margin-bottom:2px;}
+
+  details{margin-top:6px;}
+  details summary{
+    color:var(--accent);font-weight:600;font-size:14px;cursor:pointer;
+    list-style:none;
+  }
+  details summary::-webkit-details-marker{display:none;}
+  details[open] summary{margin-bottom:8px;}
+  details .inner{font-size:14.5px;line-height:1.55;color:var(--text);}
+  details .inner ol{padding-left:18px;margin:8px 0;}
+  details .inner p{margin:0 0 10px;}
+  details .inner b{color:var(--accent);}
+
+  table.example{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px;}
+  table.example td{padding:8px 6px;border-bottom:1px solid #EEE;vertical-align:top;}
+  table.example td.tag{white-space:nowrap;font-weight:700;font-size:11px;text-transform:uppercase;color:var(--accent);}
+
+  .option{
+    display:block;width:100%;text-align:left;background:var(--card);
+    border:1.5px solid #E5E5F0;border-radius:14px;padding:14px 16px;
+    margin-bottom:10px;font-size:15px;color:var(--text);cursor:pointer;
+  }
+  .option:active{transform:scale(.99);}
+  .option.correct{border-color:var(--good);background:#EAF7EF;}
+  .option.incorrect{border-color:var(--bad);background:#FDECEB;}
+  .feedback{font-size:14px;line-height:1.5;margin-top:8px;padding:12px;border-radius:12px;background:var(--accent-light);color:#333;}
+  .feedback.good{background:#EAF7EF;color:#0F5C33;}
+  .feedback.bad{background:#FDECEB;color:#8A2323;}
+
+  .storybox p{font-size:15.5px;line-height:1.6;}
+  .storytag{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;}
+
+  .heat-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;
+    background:#EDEDF0;color:#6B7280;margin-bottom:14px;
+  }
+  .heat-badge.tier-brons{background:#F4E3D3;color:#8A4B1E;}
+  .heat-badge.tier-zilver{background:#ECECEC;color:#54534F;}
+  .heat-badge.tier-goud{background:#FBF0D2;color:#7A5C10;}
+  footer.homebar{
+    padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+    text-align:center;color:var(--muted);font-size:12px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar" id="topbar" style="display:none">
+    <button class="back" onclick="goHome()">‹</button>
+    <div class="title" id="topbarTitle">Terug</div>
+  </header>
+
+  <main>
+
+    <!-- LOADING -->
+    <section class="screen active" id="screen-loading">
+      <div class="hero" style="padding-top:90px;text-align:center;">
+        <p class="eyebrow">Professional Learning</p>
+        <h1>Laden…</h1>
+      </div>
+    </section>
+
+    <!-- ONBOARDING -->
+    <section class="screen" id="screen-onboarding">
+      <div class="hero">
+        <p class="eyebrow">Welkom</p>
+        <h1>Kies een gebruikersnaam</h1>
+        <p>Deze app onthoudt je voortgang en je hitte-streak. Je gebruikersnaam en herstelcode zorgen dat je dit later terugvindt, ook op een nieuw toestel.</p>
+      </div>
+      <div class="card">
+        <div class="field"><input id="onbUsername" type="text" placeholder="Gebruikersnaam" autocomplete="off"></div>
+        <div class="field"><input id="onbPin" type="text" inputmode="numeric" placeholder="Herstelcode (minstens 4 cijfers)" maxlength="8" autocomplete="off"></div>
+        <p class="muted">Bewaar deze herstelcode ergens veilig.</p>
+        <div id="onbError" class="feedback bad" style="display:none"></div>
+        <button class="btn" onclick="submitOnboarding()">Start →</button>
+      </div>
+    </section>
+
+    <!-- HOME -->
+    <section class="screen" id="screen-home">
+      <div class="hero">
+        <p class="eyebrow" style="margin-bottom:2px">Professional Learning</p>
+        <h1>Hey 👋</h1>
+        <p>Klaar voor vandaag?</p>
+      </div>
+
+      <div id="heatBadgeHome" class="heat-badge tier-grijs">0 op rij</div>
+
+      <div class="card tap" onclick="startTerugblik()">
+        <div class="eyebrow">Korte terugblik</div>
+        <h2>3 snelle vragen</h2>
+        <p class="muted">Een korte opfrisser uit je Knowledge Library, voor je verder gaat met deze week.</p>
+        <button class="btn secondary">Start terugblik →</button>
+      </div>
+
+      <div class="card tap" id="weekCard" onclick="goWeekHome()">
+        <div class="eyebrow" id="weekCardEyebrow">Deze week</div>
+        <h2 id="weekCardTitle">—</h2>
+        <p class="muted" id="weekCardDesc">Kennis → voorbeeld → quiz → case, in eigen tempo.</p>
+        <button class="btn">Ga verder →</button>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">Binnenkort</div>
+        <h2 style="font-size:16px">Wachtrij-pagina</h2>
+        <p class="muted">Komt in een volgende versie van dit prototype — nu nog even losse ideeën. De Knowledge Library-view komt eraan; de korte terugblik hierboven gebruikt de bijhorende data al wel echt.</p>
+      </div>
+    </section>
+
+    <!-- WEEK HOME -->
+    <section class="screen" id="screen-weekhome" data-title="Deze week">
+      <div class="hero">
+        <p class="eyebrow" id="weekHomeEyebrow">Week 1 · Projectmanagement</p>
+        <h1 id="weekHomeTitle">—</h1>
+        <p id="weekHomeOrigin">—</p>
+      </div>
+      <div class="progress">
+        <div class="dot" id="pd-1"></div><div class="dot" id="pd-2"></div>
+        <div class="dot" id="pd-3"></div><div class="dot" id="pd-4"></div>
+      </div>
+      <div class="card">
+        <p>Vier onderdelen, elk een paar minuten. Je kan altijd terug naar hier.</p>
+        <button class="btn" onclick="openStep(1)">1 · Kennis</button>
+        <button class="btn secondary" onclick="openStep(2)">2 · Voorbeeld</button>
+        <button class="btn secondary" onclick="openStep(3)">3 · Quiz</button>
+        <button class="btn secondary" onclick="openStep(4)">4 · Case (eind van de week)</button>
+      </div>
+    </section>
+
+    <!-- STEP 1: KENNIS -->
+    <section class="screen" id="screen-kennis" data-title="Kennis">
+      <div class="progress"><div class="dot done"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div class="card" id="kennisCard"></div>
+    </section>
+
+    <!-- STEP 2: VOORBEELD -->
+    <section class="screen" id="screen-voorbeeld" data-title="Voorbeeld">
+      <div class="progress"><div class="dot done"></div><div class="dot done"></div><div class="dot"></div><div class="dot"></div></div>
+      <div class="card" id="voorbeeldCard"></div>
+    </section>
+
+    <!-- STEP 3: QUIZ -->
+    <section class="screen" id="screen-quiz" data-title="Quiz">
+      <div class="progress"><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot"></div></div>
+      <div class="card" id="quizCard"></div>
+    </section>
+
+    <!-- STEP 4: CASE -->
+    <section class="screen" id="screen-case" data-title="Case">
+      <div class="progress"><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div></div>
+      <div class="card storybox" id="caseCard"></div>
+    </section>
+
+    <!-- TERUGBLIK -->
+    <section class="screen" id="screen-terugblik" data-title="Korte terugblik">
+      <div class="card" id="terugblikCard"></div>
+    </section>
+
+  </main>
+
+  <footer class="homebar">Prototype v0.4 — gekoppeld aan Supabase (auth, content, voortgang, streak)</footer>
+</div>
+
+<script>
+// =========================================================================
+// SUPABASE-CONFIG
+// =========================================================================
+// De "anon/publishable" sleutel is bewust veilig om hier te laten staan: hij
+// mag geen dingen doen die Row Level Security niet toestaat. De echte
+// bescherming zit in de RLS-policies in de database, niet in het verbergen
+// van deze sleutel.
+const SUPABASE_URL = 'https://nljwrwtrorsyhgfingch.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_1N0wwYzopWQjAzhEc3xqRw_Vrw6skF7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUserId = null;
+let currentProgress = {};
+let currentWeekLabel = 'Deze week';
+
+// =========================================================================
+// FRAMEWORKS — cache van framework-content, opgehaald uit Supabase.
+// Elk framework is een zelfstandig datarecord met kennis/voorbeeld/quiz/case
+// — zelfde vorm als voorheen, nu gevuld vanuit de database i.p.v. hardcoded.
+// =========================================================================
+const FRAMEWORKS = {};
+let currentFrameworkId = null;
+
+function mapFrameworkRow(fw){
+  return {
+    id: fw.id,
+    title: fw.title,
+    domain: fw.domain,
+    origin: fw.origin,
+    kennis: fw.kennis,
+    voorbeeld: fw.voorbeeld,
+    quiz: fw.quiz,
+    case: fw.case_data
+  };
+}
+
+// ---------- hitte-streak (nu persistent via profiles.heat_streak) ----------
+let heatStreak = 0;
+const heatTiers = [
+  {name:'grijs', min:0, emoji:''},
+  {name:'brons', min:4, emoji:'🥉'},
+  {name:'zilver', min:7, emoji:'🥈'},
+  {name:'goud', min:10, emoji:'👑'}
+];
+function currentTierIndex(streak){
+  let idx = 0;
+  heatTiers.forEach((t,i)=>{ if(streak >= t.min) idx = i; });
+  return idx;
+}
+function stepDownTier(){
+  const idx = currentTierIndex(heatStreak);
+  const newIdx = Math.max(0, idx - 1);
+  heatStreak = heatTiers[newIdx].min;
+}
+function renderHeatBadge(el){
+  if(!el) return;
+  const tier = heatTiers[currentTierIndex(heatStreak)];
+  el.className = 'heat-badge tier-' + tier.name;
+  el.innerText = (tier.emoji ? tier.emoji + ' ' : '') + heatStreak + ' op rij';
+}
+function updateAllHeatBadges(){
+  renderHeatBadge(document.getElementById('heatBadgeHome'));
+  renderHeatBadge(document.getElementById('heatBadgeQuiz'));
+  renderHeatBadge(document.getElementById('heatBadgeTerugblik'));
+}
+async function saveHeatStreak(){
+  if(!currentUserId) return;
+  try{ await sb.from('profiles').update({ heat_streak: heatStreak }).eq('id', currentUserId); }
+  catch(e){ console.error('streak opslaan mislukt', e); }
+}
+
+// ---------- voortgang (persistent via de progress-tabel) ----------
+function buildProgressPayload(step, extra){
+  const payload = { user_id: currentUserId, framework_id: currentFrameworkId };
+  payload[step + '_completed_at'] = new Date().toISOString();
+  if(extra) Object.assign(payload, extra);
+  return payload;
+}
+function applyProgressUI(progress){
+  const map = [
+    ['pd-1', progress && progress.kennis_completed_at],
+    ['pd-2', progress && progress.voorbeeld_completed_at],
+    ['pd-3', progress && progress.quiz_completed_at],
+    ['pd-4', progress && progress.case_completed_at]
+  ];
+  map.forEach(function(pair){
+    const el = document.getElementById(pair[0]);
+    if(el) el.classList.toggle('done', !!pair[1]);
+  });
+  const allDone = map.every(function(pair){ return !!pair[1]; });
+  const weekCard = document.getElementById('weekCard');
+  if(weekCard){
+    const btn = weekCard.querySelector('.btn');
+    if(btn) btn.innerText = allDone ? 'Deze week afgerond ✓' : 'Ga verder →';
+  }
+}
+async function markProgress(step, extra){
+  if(!currentUserId || !currentFrameworkId) return;
+  const payload = buildProgressPayload(step, extra);
+  currentProgress = Object.assign({}, currentProgress, payload);
+  applyProgressUI(currentProgress);
+  try{ await sb.from('progress').upsert(payload, { onConflict: 'user_id,framework_id' }); }
+  catch(e){ console.error('voortgang opslaan mislukt', e); }
+}
+
+// ---------- PIN-hash (voor herstelcode, met veilige fallback) ----------
+async function hashPin(pin){
+  try{
+    const enc = new TextEncoder().encode(pin);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  } catch(e){
+    // fallback voor een niet-veilige context (bv. lokaal een bestand openen zonder https)
+    let h = 0;
+    for(let i=0;i<pin.length;i++){ h = ((h<<5)-h+pin.charCodeAt(i))|0; }
+    return 'fallback_' + Math.abs(h).toString(16);
+  }
+}
+
+// ---------- onboarding ----------
+async function submitOnboarding(){
+  const username = document.getElementById('onbUsername').value.trim();
+  const pin = document.getElementById('onbPin').value.trim();
+  const errEl = document.getElementById('onbError');
+  errEl.style.display = 'none';
+  if(username.length < 2){ errEl.textContent = 'Kies een gebruikersnaam van minstens 2 tekens.'; errEl.style.display='block'; return; }
+  if(pin.length < 4){ errEl.textContent = 'Kies een herstelcode van minstens 4 cijfers.'; errEl.style.display='block'; return; }
+  const pinHash = await hashPin(pin);
+  try{
+    const { error } = await sb.from('profiles').insert({ id: currentUserId, username: username, recovery_pin_hash: pinHash, heat_streak: 0 });
+    if(error) throw error;
+    heatStreak = 0;
+    await boot(true);
+  } catch(e){
+    const msg = (e && e.message) || '';
+    errEl.textContent = msg.indexOf('duplicate') !== -1 ? 'Die gebruikersnaam is al bezet, kies een andere.' : 'Er ging iets mis bij het opslaan. Probeer opnieuw.';
+    errEl.style.display = 'block';
+  }
+}
+
+// ---------- navigation ----------
+function showScreen(id, title){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  const bar = document.getElementById('topbar');
+  if(id === 'screen-home' || id === 'screen-loading' || id === 'screen-onboarding'){ bar.style.display='none'; }
+  else { bar.style.display='flex'; document.getElementById('topbarTitle').innerText = title || document.getElementById(id).dataset.title || ''; }
+  window.scrollTo(0,0);
+}
+function goHome(){ showScreen('screen-home'); }
+function goWeekHome(){
+  const f = FRAMEWORKS[currentFrameworkId];
+  if(!f) return;
+  document.getElementById('weekHomeEyebrow').innerText = currentWeekLabel + ' · ' + f.domain;
+  document.getElementById('weekHomeTitle').innerText = f.title;
+  document.getElementById('weekHomeOrigin').innerHTML = 'Herkomst: ' + f.origin;
+  showScreen('screen-weekhome', f.title);
+}
+function openStep(n){
+  if(n===1){ renderKennis(); showScreen('screen-kennis','Kennis'); }
+  if(n===2){ renderVoorbeeld(); showScreen('screen-voorbeeld','Voorbeeld'); }
+  if(n===3){ showScreen('screen-quiz','Quiz'); renderQuiz(); }
+  if(n===4){ showScreen('screen-case','Case'); renderCase('open'); }
+}
+
+// ---------- kennis & voorbeeld (dynamisch, generiek voor elk framework) ----------
+function renderQuadHTML(visual){
+  const items = visual.items.map(function(it){ return '<div class="'+it.cls+'"><b>'+it.label+'</b>'+it.text+'</div>'; }).join('');
+  return '<div class="quad">'+items+'</div>';
+}
+function renderKennis(){
+  const f = FRAMEWORKS[currentFrameworkId];
+  const card = document.getElementById('kennisCard');
+  card.innerHTML = `
+    <div class="eyebrow">Kennis</div>
+    <h2>${f.title}</h2>
+    <p><b>Herkomst:</b> ${f.origin}</p>
+    <p>${f.kennis.summary}</p>
+    ${f.kennis.visual ? renderQuadHTML(f.kennis.visual) : ''}
+    <details>
+      <summary>Meer detail &amp; stappenplan</summary>
+      <div class="inner">${f.kennis.detail}</div>
+    </details>
+    <button class="btn" onclick="markProgress('kennis'); openStep(2);">Volgende: voorbeeld →</button>`;
+}
+function renderVoorbeeld(){
+  const f = FRAMEWORKS[currentFrameworkId];
+  const card = document.getElementById('voorbeeldCard');
+  const rows = f.voorbeeld.rows.map(function(r){ return '<tr><td class="tag" style="color:'+r.color+'">'+r.tag+'</td><td>'+r.text+'</td></tr>'; }).join('');
+  card.innerHTML = `
+    <div class="eyebrow">Voorbeeld</div>
+    <h2>Een toepassing uit de praktijk</h2>
+    <p class="muted">${f.voorbeeld.intro}</p>
+    <table class="example">${rows}</table>
+    <p style="margin-top:10px">${f.voorbeeld.narrative}</p>
+    <button class="btn" onclick="markProgress('voorbeeld'); openStep(3);">Volgende: quiz →</button>`;
+}
+
+// ---------- quiz (dynamisch) ----------
+let quizIndex = 0, quizScore = 0;
+function renderQuiz(){
+  quizIndex = 0; quizScore = 0;
+  renderQuizQuestion();
+}
+function renderQuizQuestion(){
+  const f = FRAMEWORKS[currentFrameworkId];
+  const questions = f.quiz;
+  const card = document.getElementById('quizCard');
+  if(quizIndex >= questions.length){
+    card.innerHTML = `
+      <div id="heatBadgeQuiz" class="heat-badge tier-grijs">0 op rij</div>
+      <div class="eyebrow">Quiz afgerond</div>
+      <h2>${quizScore} / ${questions.length} correct</h2>
+      <p class="muted">Mooi bezig — op naar de case, waar je ${f.title} echt gaat toepassen.</p>
+      <button class="btn" onclick="openStep(4)">Naar de case →</button>`;
+    updateAllHeatBadges();
+    markProgress('quiz', { quiz_score: quizScore });
+    return;
+  }
+  const item = questions[quizIndex];
+  card.innerHTML = `
+    <div id="heatBadgeQuiz" class="heat-badge tier-grijs">0 op rij</div>
+    <div class="eyebrow">Vraag ${quizIndex+1} / ${questions.length}</div>
+    <h2 style="font-size:17px">${item.q}</h2>
+    <div id="optionsWrap"></div>
+    <div id="feedbackWrap"></div>`;
+  updateAllHeatBadges();
+  const wrap = document.getElementById('optionsWrap');
+  item.options.forEach(function(opt,i){
+    const b = document.createElement('button');
+    b.className='option'; b.innerText=opt;
+    b.onclick=function(){ answerQuiz(i); };
+    wrap.appendChild(b);
+  });
+}
+function answerQuiz(i){
+  const f = FRAMEWORKS[currentFrameworkId];
+  const item = f.quiz[quizIndex];
+  const opts = document.querySelectorAll('#optionsWrap .option');
+  opts.forEach(function(o){ o.onclick=null; });
+  opts[item.correct].classList.add('correct');
+  if(i !== item.correct){
+    opts[i].classList.add('incorrect');
+    heatStreak = 0;
+  } else {
+    quizScore++;
+    heatStreak++;
+  }
+  updateAllHeatBadges();
+  saveHeatStreak();
+  const fb = document.getElementById('feedbackWrap');
+  fb.innerHTML = `<div class="feedback ${i===item.correct?'good':'bad'}">${item.explain}</div>
+    <button class="btn" style="margin-top:14px" onclick="nextQuiz()">Volgende →</button>`;
+}
+function nextQuiz(){ quizIndex++; renderQuizQuestion(); }
+
+// ---------- case (dynamisch) ----------
+function renderCase(stepId){
+  const f = FRAMEWORKS[currentFrameworkId];
+  const step = f.case.nodes[stepId];
+  const card = document.getElementById('caseCard');
+  let optsHtml = '';
+  step.options.forEach(function(o){
+    optsHtml += '<button class="option" onclick="'+(o.next==='__home' ? 'goHome()' : "renderCase('"+o.next+"')")+'">'+o.label+'</button>';
+  });
+  card.innerHTML = '<div class="storytag">'+step.tag+'</div><p>'+step.text+'</p><div style="margin-top:14px">'+optsHtml+'</div>';
+  window.scrollTo(0,0);
+  if(stepId === 'debrief'){ markProgress('case'); }
+}
+
+// ---------- korte terugblik ----------
+// Haalt de vraagpool op uit ALLE frameworks die de gebruiker al heeft
+// afgerond (progress.quiz_completed_at niet leeg) — dit is de eerste echte
+// werking van de Knowledge Library-pijler, ook al bestaat die zelf nog niet
+// als aparte pagina.
+let tbIndex = 0, tbCount = 3;
+let terugblikPool = [];
+async function loadTerugblikPool(){
+  const fallback = FRAMEWORKS[currentFrameworkId] ? FRAMEWORKS[currentFrameworkId].quiz : [];
+  if(!currentUserId) return fallback;
+  try{
+    const { data: rows } = await sb.from('progress').select('framework_id').eq('user_id', currentUserId).not('quiz_completed_at', 'is', null);
+    const ids = (rows || []).map(function(r){ return r.framework_id; });
+    if(ids.length === 0) return fallback;
+    const missing = ids.filter(function(id){ return !FRAMEWORKS[id]; });
+    if(missing.length){
+      const { data: fws } = await sb.from('frameworks').select('*').in('id', missing);
+      (fws || []).forEach(function(fw){ FRAMEWORKS[fw.id] = mapFrameworkRow(fw); });
+    }
+    let pool = [];
+    ids.forEach(function(id){ if(FRAMEWORKS[id]) pool = pool.concat(FRAMEWORKS[id].quiz); });
+    return pool.length ? pool : fallback;
+  } catch(e){
+    console.error('terugblik-pool laden mislukt', e);
+    return fallback;
+  }
+}
+async function startTerugblik(){
+  showScreen('screen-terugblik','Korte terugblik');
+  tbIndex = 0;
+  document.getElementById('terugblikCard').innerHTML = '<p class="muted">Laden…</p>';
+  terugblikPool = await loadTerugblikPool();
+  renderTerugblik();
+}
+function renderTerugblik(){
+  const card = document.getElementById('terugblikCard');
+  if(!terugblikPool || terugblikPool.length === 0){
+    card.innerHTML = `
+      <div class="eyebrow">Korte terugblik</div>
+      <h2>Nog niets om te herhalen</h2>
+      <p class="muted">Rond eerst een weekquiz af — dan verschijnen hier vragen uit je Knowledge Library.</p>
+      <button class="btn" onclick="goHome()">Terug naar start</button>`;
+    return;
+  }
+  if(tbIndex >= tbCount){
+    card.innerHTML = `
+      <div id="heatBadgeTerugblik" class="heat-badge tier-grijs">0 op rij</div>
+      <div class="eyebrow">Klaar</div>
+      <h2>Mooi opgefrist 👍</h2>
+      <p class="muted">Dit wordt rijker naarmate je Knowledge Library groeit.</p>
+      <button class="btn" onclick="goHome()">Terug naar start</button>`;
+    updateAllHeatBadges();
+    return;
+  }
+  const item = terugblikPool[tbIndex % terugblikPool.length];
+  card.innerHTML = `
+    <div id="heatBadgeTerugblik" class="heat-badge tier-grijs">0 op rij</div>
+    <div class="eyebrow">Terugblik · ${tbIndex+1}/${tbCount}</div>
+    <h2 style="font-size:17px">${item.q}</h2>
+    <div id="tbOptionsWrap"></div>
+    <div id="tbFeedbackWrap"></div>`;
+  updateAllHeatBadges();
+  const wrap = document.getElementById('tbOptionsWrap');
+  item.options.forEach(function(opt,i){
+    const b = document.createElement('button');
+    b.className='option'; b.innerText=opt;
+    b.onclick=function(){ answerTerugblik(i,item); };
+    wrap.appendChild(b);
+  });
+}
+function answerTerugblik(i,item){
+  const opts = document.querySelectorAll('#tbOptionsWrap .option');
+  opts.forEach(function(o){ o.onclick=null; });
+  opts[item.correct].classList.add('correct');
+  if(i !== item.correct){
+    opts[i].classList.add('incorrect');
+    stepDownTier();
+  } else {
+    heatStreak++;
+  }
+  updateAllHeatBadges();
+  saveHeatStreak();
+  const fb = document.getElementById('tbFeedbackWrap');
+  fb.innerHTML = `<div class="feedback ${i===item.correct?'good':'bad'}">${item.explain}</div>
+    <button class="btn" style="margin-top:14px" onclick="nextTerugblik()">Volgende →</button>`;
+}
+function nextTerugblik(){ tbIndex++; renderTerugblik(); }
+
+// ---------- init: home-kaart ----------
+function initHomeCard(){
+  const f = FRAMEWORKS[currentFrameworkId];
+  if(!f) return;
+  document.getElementById('weekCardEyebrow').innerText = currentWeekLabel + ' — ' + f.domain;
+  document.getElementById('weekCardTitle').innerText = f.title;
+}
+function showEmptyContentState(){
+  document.getElementById('weekCardEyebrow').innerText = 'Nog geen content';
+  document.getElementById('weekCardTitle').innerText = 'Binnenkort beschikbaar';
+  document.getElementById('weekCardDesc').innerText = 'Er staat nog geen framework klaar in de database voor deze week.';
+  updateAllHeatBadges();
+  showScreen('screen-home');
+}
+function showBootError(){
+  document.getElementById('weekCardEyebrow').innerText = 'Er ging iets mis';
+  document.getElementById('weekCardTitle').innerText = 'Kon niet laden';
+  document.getElementById('weekCardDesc').innerText = 'Controleer je internetverbinding en probeer de app opnieuw te openen.';
+  showScreen('screen-home');
+}
+
+// =========================================================================
+// BOOT — inloggen, profiel ophalen (of onboarding tonen), content laden
+// =========================================================================
+async function boot(skipAuth){
+  try{
+    if(!skipAuth){
+      let sessionResult = await sb.auth.getSession();
+      let session = sessionResult.data && sessionResult.data.session;
+      if(!session){
+        const signInResult = await sb.auth.signInAnonymously();
+        if(signInResult.error) throw signInResult.error;
+        session = signInResult.data.session;
+      }
+      currentUserId = session.user.id;
+    }
+
+    const profileResult = await sb.from('profiles').select('*').eq('id', currentUserId).maybeSingle();
+    if(profileResult.error) throw profileResult.error;
+    const profile = profileResult.data;
+    if(!profile){
+      showScreen('screen-onboarding');
+      return;
+    }
+    heatStreak = profile.heat_streak || 0;
+
+    const today = new Date().toISOString().slice(0,10);
+    const schedResult = await sb.from('schedule')
+      .select('framework_id, week_start_date, source')
+      .lte('week_start_date', today)
+      .order('week_start_date', { ascending:false })
+      .limit(1)
+      .maybeSingle();
+    if(schedResult.error) throw schedResult.error;
+    const sched = schedResult.data;
+
+    if(!sched){ showEmptyContentState(); return; }
+
+    const fwResult = await sb.from('frameworks').select('*').eq('id', sched.framework_id).maybeSingle();
+    if(fwResult.error) throw fwResult.error;
+    const fw = fwResult.data;
+    if(!fw){ showEmptyContentState(); return; }
+
+    FRAMEWORKS[fw.id] = mapFrameworkRow(fw);
+    currentFrameworkId = fw.id;
+
+    if(sched.source === 'curriculum'){
+      const countResult = await sb.from('schedule').select('id', { count:'exact', head:true }).eq('source','curriculum').lte('week_start_date', sched.week_start_date);
+      currentWeekLabel = 'Week ' + (countResult.count || 1);
+    } else if(sched.source === 'wachtrij'){
+      currentWeekLabel = 'Uit de wachtrij';
+    } else {
+      currentWeekLabel = 'Herhaling';
+    }
+
+    const progressResult = await sb.from('progress').select('*').eq('user_id', currentUserId).eq('framework_id', currentFrameworkId).maybeSingle();
+    currentProgress = progressResult.data || {};
+
+    initHomeCard();
+    applyProgressUI(currentProgress);
+    updateAllHeatBadges();
+    showScreen('screen-home');
+  } catch(e){
+    console.error('boot mislukt', e);
+    showBootError();
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
