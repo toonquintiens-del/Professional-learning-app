@@ -177,6 +177,23 @@
         <p class="muted">Bewaar deze herstelcode ergens veilig.</p>
         <div id="onbError" class="feedback bad" style="display:none"></div>
         <button class="btn" onclick="submitOnboarding()">Start →</button>
+        <button class="btn ghost" style="margin-top:12px" onclick="showRecoverScreen()">Ik heb al een account →</button>
+      </div>
+    </section>
+
+    <!-- RECOVER (bestaand account terugvinden op een nieuw toestel) -->
+    <section class="screen" id="screen-recover">
+      <div class="hero">
+        <p class="eyebrow">Terug aan boord</p>
+        <h1>Log in met je account</h1>
+        <p>Vul je gebruikersnaam en herstelcode in — je voortgang en hitte-streak verschijnen automatisch terug op dit toestel.</p>
+      </div>
+      <div class="card">
+        <div class="field"><input id="recUsername" type="text" placeholder="Gebruikersnaam" autocomplete="off"></div>
+        <div class="field"><input id="recPin" type="text" inputmode="numeric" placeholder="Herstelcode" maxlength="8" autocomplete="off"></div>
+        <div id="recError" class="feedback bad" style="display:none"></div>
+        <button class="btn" onclick="submitRecovery()">Account herstellen →</button>
+        <button class="btn ghost" style="margin-top:4px" onclick="showOnboardingScreen()">Nieuw account maken in plaats daarvan</button>
       </div>
     </section>
 
@@ -262,7 +279,7 @@
 
   </main>
 
-  <footer class="homebar">Prototype v0.4 — gekoppeld aan Supabase (auth, content, voortgang, streak)</footer>
+  <footer class="homebar">Prototype v0.5 — multi-user (accountherstel via gebruikersnaam + herstelcode)</footer>
 </div>
 
 <script>
@@ -401,7 +418,50 @@ async function submitOnboarding(){
     await boot(true);
   } catch(e){
     const msg = (e && e.message) || '';
-    errEl.textContent = msg.indexOf('duplicate') !== -1 ? 'Die gebruikersnaam is al bezet, kies een andere.' : 'Er ging iets mis bij het opslaan. Probeer opnieuw.';
+    errEl.textContent = msg.indexOf('duplicate') !== -1 ? 'Die gebruikersnaam is al bezet. Is dit jouw eigen account? Gebruik dan "Ik heb al een account" hieronder.' : 'Er ging iets mis bij het opslaan. Probeer opnieuw.';
+    errEl.style.display = 'block';
+  }
+}
+
+// ---------- account herstellen op een nieuw toestel ----------
+// Supabase's anonieme login geeft elk toestel een eigen, niet-overdraagbare
+// identiteit (auth.uid()) — dus "terugvinden via gebruikersnaam + herstelcode"
+// kan niet met een gewone insert/update onder Row Level Security (je bent nog
+// niet de eigenaar van het profiel dat je probeert over te nemen). In plaats
+// daarvan roept dit de `claim_profile`-databasefunctie aan (zie
+// supabase-multiuser-migration.sql): die controleert de herstelcode en zet,
+// als die klopt, het profiel + voortgang veilig over naar het huidige toestel.
+function showRecoverScreen(){
+  document.getElementById('onbError').style.display = 'none';
+  showScreen('screen-recover');
+}
+function showOnboardingScreen(){
+  document.getElementById('recError').style.display = 'none';
+  showScreen('screen-onboarding');
+}
+async function submitRecovery(){
+  const username = document.getElementById('recUsername').value.trim();
+  const pin = document.getElementById('recPin').value.trim();
+  const errEl = document.getElementById('recError');
+  errEl.style.display = 'none';
+  if(username.length < 2){ errEl.textContent = 'Vul je gebruikersnaam in.'; errEl.style.display='block'; return; }
+  if(pin.length < 4){ errEl.textContent = 'Vul je herstelcode in.'; errEl.style.display='block'; return; }
+  const pinHash = await hashPin(pin);
+  try{
+    const { data, error } = await sb.rpc('claim_profile', { p_username: username, p_pin_hash: pinHash });
+    if(error) throw error;
+    if(!data || !data.success){
+      const reason = data && data.reason;
+      errEl.textContent =
+        reason === 'wrong_pin' ? 'Foutieve herstelcode. Probeer opnieuw.' :
+        reason === 'not_found' ? 'Geen account gevonden met die gebruikersnaam.' :
+        'Er ging iets mis bij het herstellen. Probeer opnieuw.';
+      errEl.style.display = 'block';
+      return;
+    }
+    await boot(true);
+  } catch(e){
+    errEl.textContent = 'Er ging iets mis bij het herstellen. Probeer opnieuw.';
     errEl.style.display = 'block';
   }
 }
@@ -411,7 +471,7 @@ function showScreen(id, title){
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
   const bar = document.getElementById('topbar');
-  if(id === 'screen-home' || id === 'screen-loading' || id === 'screen-onboarding'){ bar.style.display='none'; }
+  if(id === 'screen-home' || id === 'screen-loading' || id === 'screen-onboarding' || id === 'screen-recover'){ bar.style.display='none'; }
   else { bar.style.display='flex'; document.getElementById('topbarTitle').innerText = title || document.getElementById(id).dataset.title || ''; }
   window.scrollTo(0,0);
 }
@@ -714,5 +774,7 @@ async function boot(skipAuth){
 
 boot();
 </script>
+</body>
+</html>
 </body>
 </html>
